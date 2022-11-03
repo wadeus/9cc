@@ -20,12 +20,27 @@ struct Token {
     char *str;
 };
 
+char *user_input;
+
 // current token
 Token *token;
 
 void error(char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
+}
+
+void error_at(char *loc, char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+
+    int pos = loc - user_input;
+    fprintf(stderr, "%s\n", user_input);
+    fprintf(stderr, "%*s", pos, " ");
+    fprintf(stderr, "^ ");
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     exit(1);
@@ -48,7 +63,7 @@ void expect(char op) {
 
 int expect_number() {
     if (token->kind != TK_NUM)
-        error("not a number");
+        error_at(token->str, "not a number");
     int val = token->val;
     token = token->next;
     return val;
@@ -66,7 +81,8 @@ Token *new_token(TokenKind kind, Token *cur, char *str) {
     return tok;
 }
 
-Token *tokenize(char *p) {
+Token *tokenize() {
+    char *p = user_input;
     Token head;
     head.next = NULL;
     Token *cur = &head;
@@ -100,8 +116,10 @@ int main(int argc, char **argv) {
         error("incorrect number of arguments");
         return 1;
     }
+
+    user_input = argv[1];
     
-    token = tokenize(argv[1]);
+    token = tokenize();
 
     printf(".intel_syntax noprefix\n");
     printf(".globl main\n");
